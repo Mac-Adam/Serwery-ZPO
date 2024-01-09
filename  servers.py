@@ -5,8 +5,8 @@ from typing import Optional, Union, List
 
 
 class Product:
-    def __int__(self, name: str, price: float):
-        if re.fullmatch('[a-zA-Z]*[0-9]*', name) is None:
+    def __init__(self, name: str, price: float):
+        if re.fullmatch('[a-zA-Z]+[0-9]+', name) is None:
             raise ValueError
         self.name = name
         self.price = price
@@ -18,9 +18,11 @@ class Product:
         return hash((self.name, self.price))
 
 
-class TooManyProductsFoundError:
+class TooManyProductsFoundError(Exception):
     # Reprezentuje wyjątek związany ze znalezieniem zbyt dużej liczby produktów.
-    pass
+    def __init__(self, n: int):
+        self.n = n
+        super().__init__("Ilość produktów wyniosła: {}".format(n))
 
 
 # FIXME: Każada z poniższych klas serwerów powinna posiadać:
@@ -33,12 +35,15 @@ class ListServer:
         self.__n_max_returned_entries = 3
         self.__products = products[:]
 
-    def get_entries(self,n_letters):
+    def get_entries(self, n_letters: Optional[int] = 1):
         res = []
         for entry in self.__products:
             pattern = '[a-zA-Z]{' + str(n_letters) + '}[0-9]{2,3}'
             if re.fullmatch(pattern, entry.name) is not None:
                 res.append(entry)
+        if len(res) > self.__n_max_returned_entries:
+            raise TooManyProductsFoundError
+        res.sort(key=lambda x: x.price)
         return res
 
     @property
@@ -49,9 +54,9 @@ class ListServer:
 class MapServer:
     def __init__(self, products: List[Product]):
         self.__n_max_returned_entries = 3
-        self.__products = {p.name:p for p in products}
+        self.__products = {p.name: p for p in products}
 
-    def get_entries(self, n_letters):
+    def get_entries(self, n_letters: Optional[int] = 1):
         res = []
         for name, entry in self.__products:
             pattern = '[a-zA-Z]{' + str(n_letters) + '}[0-9]{2,3}'
@@ -59,6 +64,7 @@ class MapServer:
                 res.append(entry)
         if len(res) > self.__n_max_returned_entries:
             raise TooManyProductsFoundError
+        res.sort(key=lambda x: x.price)
         return res
 
     @property
@@ -73,7 +79,10 @@ class Client:
 
     def get_total_price(self, n_letters: Optional[int]) -> Optional[float]:
         try:
-            prod = self.server.get_entries(n_letters)
+            if n_letters is None:
+                prod = self.server.get_entries()
+            else:
+                prod = self.server.get_entries(n_letters)
             if not prod:
                 return None
             else:
