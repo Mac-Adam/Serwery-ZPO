@@ -1,0 +1,33 @@
+@startuml 
+
+ class Product {
+    +__init__(self, name: str, price: float)
+    +__eq__()
+    +__hash__()
+
+}
+class ListServer {
+    +__init__(self, products: List[Products])
+    +get_entries(self, n_letters)
+    +__n_max_returned_entries
+    +__products
+}
+class MapServer {
+    +__init__(self, products: List[Products])
+    +get_entries(self, n_letters)
+    +__n_max_returned_entries
+    +__products
+}
+
+class Client {
+    +__init__(self, server: Union[ListServer, MapServer])
+    +get_total_price(self, n_letters)
+}
+
+
+Product *-- MapServer
+Product *-- ListServer
+
+@enduml
+
+PlantUML Class Diagram
