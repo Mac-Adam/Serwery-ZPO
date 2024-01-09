@@ -1,14 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
-from typing import Optional
+import re
+from typing import Optional, Union, List
 
 
 class Product:
-    # FIXME: klasa powinna posiadać metodę inicjalizacyjną przyjmującą argumenty wyrażające nazwę produktu (typu str) i jego cenę (typu float) -- w takiej kolejności -- i ustawiającą atrybuty `name` (typu str) oraz `price` (typu float)
+    def __int__(self, name: str, price: float):
+        if re.fullmatch('[a-zA-Z]*[0-9]*', name) is None:
+            raise ValueError
+        self.name = name
+        self.price = price
 
     def __eq__(self, other):
-        return None  # FIXME: zwróć odpowiednią wartość
+        return self.name == other.name and self.price == other.price
 
     def __hash__(self):
         return hash((self.name, self.price))
@@ -25,15 +29,54 @@ class TooManyProductsFoundError:
 #   (3) możliwość odwołania się do metody `get_entries(self, n_letters)` zwracającą listę produktów spełniających kryterium wyszukiwania
 
 class ListServer:
-    pass
+    def __init__(self, products: List[Product]):
+        self.__n_max_returned_entries = 3
+        self.__products = products[:]
+
+    def get_entries(self,n_letters):
+        res = []
+        for entry in self.__products:
+            pattern = '[a-zA-Z]{' + str(n_letters) + '}[0-9]{2,3}'
+            if re.fullmatch(pattern, entry.name) is not None:
+                res.append(entry)
+        return res
+
+    @property
+    def n_max_returned_entries(self):
+        return self.__n_max_returned_entries
 
 
 class MapServer:
-    pass
+    def __init__(self, products: List[Product]):
+        self.__n_max_returned_entries = 3
+        self.__products = {p.name:p for p in products}
+
+    def get_entries(self, n_letters):
+        res = []
+        for name, entry in self.__products:
+            pattern = '[a-zA-Z]{' + str(n_letters) + '}[0-9]{2,3}'
+            if re.fullmatch(pattern, name) is not None:
+                res.append(entry)
+        if len(res) > self.__n_max_returned_entries:
+            raise TooManyProductsFoundError
+        return res
+
+    @property
+    def n_max_returned_entries(self):
+        return self.__n_max_returned_entries
 
 
 class Client:
     # FIXME: klasa powinna posiadać metodę inicjalizacyjną przyjmującą obiekt reprezentujący serwer
+    def __int__(self, server: Union[ListServer, MapServer]):
+        self.server = server
 
     def get_total_price(self, n_letters: Optional[int]) -> Optional[float]:
-        raise NotImplementedError()
+        try:
+            prod = self.server.get_entries(n_letters)
+            if not prod:
+                return None
+            else:
+                return sum([p.price for p in prod])
+        except TooManyProductsFoundError:
+            return None
