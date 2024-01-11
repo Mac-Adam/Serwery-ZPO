@@ -58,9 +58,9 @@ class MapServer:
 
     def get_entries(self, n_letters: Optional[int] = 1):
         res = []
-        for name, entry in self.__products:
+        for entry in self.__products.values():
             pattern = '[a-zA-Z]{' + str(n_letters) + '}[0-9]{2,3}'
-            if re.fullmatch(pattern, name) is not None:
+            if re.fullmatch(pattern, entry.name) is not None:
                 res.append(entry)
         if len(res) > self.__n_max_returned_entries:
             raise TooManyProductsFoundError
@@ -74,7 +74,7 @@ class MapServer:
 
 class Client:
     # FIXME: klasa powinna posiadać metodę inicjalizacyjną przyjmującą obiekt reprezentujący serwer
-    def __int__(self, server: Union[ListServer, MapServer]):
+    def __init__(self, server: Union[ListServer, MapServer]):
         self.server = server
 
     def get_total_price(self, n_letters: Optional[int]) -> Optional[float]:
