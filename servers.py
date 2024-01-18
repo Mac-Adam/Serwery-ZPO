@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import re
-from typing import Optional, Union, List
+from typing import Optional, List, TypeVar
+from abc import ABC, abstractmethod
 
 
 class Product:
@@ -11,70 +12,68 @@ class Product:
         self.name = name
         self.price = price
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.name == other.name and self.price == other.price
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.name, self.price))
 
 
-class TooManyProductsFoundError(Exception):
+class ServerError(Exception):
+    pass
+
+
+class TooManyProductsFoundError(ServerError):
     # Reprezentuje wyjątek związany ze znalezieniem zbyt dużej liczby produktów.
-    def __init__(self, n: int):
-        self.n = n
-        super().__init__("Ilość produktów wyniosła: {}".format(n))
+    pass
 
 
-# FIXME: Każada z poniższych klas serwerów powinna posiadać:
-#   (1) metodę inicjalizacyjną przyjmującą listę obiektów typu `Product` i ustawiającą atrybut `products` zgodnie z typem reprezentacji produktów na danym serwerze,
-#   (2) możliwość odwołania się do atrybutu klasowego `n_max_returned_entries` (typu int) wyrażający maksymalną dopuszczalną liczbę wyników wyszukiwania,
-#   (3) możliwość odwołania się do metody `get_entries(self, n_letters)` zwracającą listę produktów spełniających kryterium wyszukiwania
+class Server(ABC):
+    n_max_returned_entries = 3
 
-class ListServer:
-    def __init__(self, products: List[Product]):
-        self.__n_max_returned_entries = 3
-        self.__products = products[:]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def get_entries(self, n_letters: Optional[int] = 1):
+    def get_entries(self, n_letters: int = 1):
         res = []
-        for entry in self.__products:
+        for entry in self._get_products():
             pattern = '[a-zA-Z]{' + str(n_letters) + '}[0-9]{2,3}'
             if re.fullmatch(pattern, entry.name) is not None:
                 res.append(entry)
-        if len(res) > self.__n_max_returned_entries:
+        if len(res) > self.n_max_returned_entries:
             raise TooManyProductsFoundError
         res.sort(key=lambda x: x.price)
         return res
 
-    @property
-    def n_max_returned_entries(self):
-        return self.__n_max_returned_entries
+    @abstractmethod
+    def _get_products(self) -> List[Product]:
+        raise NotImplementedError
 
 
-class MapServer:
-    def __init__(self, products: List[Product]):
-        self.__n_max_returned_entries = 3
+ServerType = TypeVar('ServerType', bound=Server)
+
+
+class ListServer(Server):
+    def __init__(self, products: List[Product], *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__products = products
+
+    def _get_products(self) -> List[Product]:
+        return self.__products
+
+
+class MapServer(Server):
+    def __init__(self, products: List[Product], *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__products = {p.name: p for p in products}
 
-    def get_entries(self, n_letters: Optional[int] = 1):
-        res = []
-        for entry in self.__products.values():
-            pattern = '[a-zA-Z]{' + str(n_letters) + '}[0-9]{2,3}'
-            if re.fullmatch(pattern, entry.name) is not None:
-                res.append(entry)
-        if len(res) > self.__n_max_returned_entries:
-            raise TooManyProductsFoundError
-        res.sort(key=lambda x: x.price)
-        return res
-
-    @property
-    def n_max_returned_entries(self):
-        return self.__n_max_returned_entries
+    def _get_products(self) -> List[Product]:
+        return list(self.__products.values())
 
 
 class Client:
-    # FIXME: klasa powinna posiadać metodę inicjalizacyjną przyjmującą obiekt reprezentujący serwer
-    def __init__(self, server: Union[ListServer, MapServer]):
+
+    def __init__(self, server: ServerType):
         self.server = server
 
     def get_total_price(self, n_letters: Optional[int]) -> Optional[float]:

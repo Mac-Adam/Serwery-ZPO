@@ -1,0 +1,48 @@
+@startuml
+
+ class Product {
+    +__init__(name: str, price: float)
+    +__eq__() : bool
+    +__hash__() : int
+
+}
+
+
+abstract class Server {
+    n_max_returned_entries : int
+    +get_entries(n_letters: int) : List[Products]
+    #{abstract} _get_products() : List[Products]
+}
+class ListServer {
+    -__products : List[Products]
+    +__init__(products: List[Products])
+    #_get_products() : List[Products]
+}
+class MapServer {
+    -__products : Dict[Products]
+    +__init__(products: List[Products])
+    #_get_products() : List[Products]
+}
+
+class Client {
+    +__init__(server: ServerType)
+    +get_total_price( n_letters): int
+}
+class ServerError
+
+class TooManyProductsFoundError
+
+ServerError <|-- TooManyProductsFoundError
+
+Server -Right- TooManyProductsFoundError
+
+Server <|-- MapServer
+Server <|-- ListServer
+
+Product --* Server : 1..*
+
+Server -Left-o Client
+
+@enduml
+
+PlantUML Class Diagram
