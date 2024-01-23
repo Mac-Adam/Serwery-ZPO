@@ -56,19 +56,19 @@ ServerType = TypeVar('ServerType', bound=Server)
 class ListServer(Server):
     def __init__(self, products: List[Product], *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__products = products
+        self.products = products
 
     def _get_products(self) -> List[Product]:
-        return self.__products
+        return self.products
 
 
 class MapServer(Server):
     def __init__(self, products: List[Product], *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__products = {p.name: p for p in products}
+        self.products = {p.name: p for p in products}
 
     def _get_products(self) -> List[Product]:
-        return list(self.__products.values())
+        return list(self.products.values())
 
 
 class Client:

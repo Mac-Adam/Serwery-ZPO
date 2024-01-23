@@ -14,12 +14,12 @@ abstract class Server {
     #{abstract} _get_products() : List[Products]
 }
 class ListServer {
-    -__products : List[Products]
+    +products : List[Products]
     +__init__(products: List[Products])
     #_get_products() : List[Products]
 }
 class MapServer {
-    -__products : Dict[Products]
+    +products : Dict[Products]
     +__init__(products: List[Products])
     #_get_products() : List[Products]
 }

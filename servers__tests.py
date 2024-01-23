@@ -7,6 +7,11 @@ server_types = (ListServer, MapServer)
 
 
 class ServerTest(unittest.TestCase):
+    def test_server_has_products(self):
+        products = []
+        for server_type in server_types:
+            server = server_type(products)
+            self.assertTrue(hasattr(server, 'products'))
 
     def test_get_entries_returns_proper_entries(self):
         products = [Product('P12', 1), Product('PP234', 2), Product('PP235', 1)]
